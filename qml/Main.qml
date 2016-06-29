@@ -8,7 +8,7 @@ import Sailfish.Silica 1.0
 
 import net.sf.libosmscout.map 1.0
 
-import "custom"
+// import "custom"
 
 Page {
     id: mainWindow
