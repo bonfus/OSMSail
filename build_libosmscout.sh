@@ -11,7 +11,7 @@ then
 echo "Library already compiled"
 else
 cd libosmscout 
-make clean && ./configure --disable-shared --enable-static && make
+./configure --disable-shared --enable-static && make
 cp ./src/.libs/*.a "$LIBPATH/"
 cd ..
 fi
@@ -27,7 +27,7 @@ echo "Library already compiled"
 else
 echo "----- STARTING GENERATION OF libosmscoutmap -----"
 cd libosmscout-map
-make clean && ./configure --disable-shared --enable-static && make
+./configure --disable-shared --enable-static && make
 cp ./src/.libs/*.a "$LIBPATH/"
 cd ..
 fi
@@ -42,7 +42,7 @@ echo "Library already compiled"
 else
 echo "----- STARTING GENERATION OF libosmscoutmapQT -----"
 cd libosmscout-map-qt
-make clean && ./configure --disable-shared --enable-static && make
+./configure --disable-shared --enable-static && make
 cp ./src/.libs/*.a "$LIBPATH/"
 cd ..
 fi
