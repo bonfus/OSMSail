@@ -75,14 +75,16 @@ Page {
         }
     }
 
-    SilicaGridView {
+    SilicaFlickable {
     
         id: content
         anchors.fill: parent
 
+
         PullDownMenu {
             MenuItem {
                 text: "Search location"
+                onClicked: pageStack.push(Qt.resolvedUrl("pages/Search.qml"))
             }
         }
 
@@ -174,5 +176,7 @@ Page {
                 }
             }
         }
+        
+        ScrollDecorator {}
     }
 }
