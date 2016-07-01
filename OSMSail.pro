@@ -2,8 +2,8 @@ TEMPLATE = app
 
 QT_CONFIG -= no-pkg-config
 CONFIG += qt warn_on link_pkgconfig thread c++11 silent sailfishapp
-CONFIG += release
-CONFIG -= debug
+CONFIG -= release
+CONFIG += debug
 
 CONFIG(debug, debug|release) {
 QMAKE_FLAGS += -std=c++11 -O2 -pthread -fopenmp -mmmx -msse -msse2 -mssse3 -msse4.1
@@ -86,17 +86,8 @@ HEADERS = src/Settings.h \
 DISTFILES += \
     qml/custom/MapButton.qml \
     qml/Main.qml \
-    qml/custom/LineEdit.qml \
-    qml/custom/DialogActionButton.qml \
-    qml/custom/LocationSearch.qml \
-    qml/custom/ScrollIndicator.qml \
-    qml/custom/MapDialog.qml \
-    qml/AboutDialog.qml \
-    qml/SearchDialog.qml \
-    pics/DeleteText.svg \
-    pics/Minus.svg \
-    pics/Plus.svg \
-    pics/Search.svg
+    qml/pages/Search.qml \
+    qml/pages/Route.qml
 
 RESOURCES += \
     res.qrc

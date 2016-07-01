@@ -8,12 +8,32 @@ Page {
     property bool wroteDuringInterval: false
     property string lastSearchedText: ""
 
+    property Location startLocation;
+    property Location destinationLocation;
+
+    property bool firstEntry:true;
+
+    RoutingListModel {
+        id: routingModel
+    }
     
     function selectLocation(selectedLocation) {
-        mapPage.currentLocation=selectedLocation
-        pageStack.pop()
+        if (firstEntry) {
+            startLocation = selectedLocation
+            firstEntry = false
+        } else {
+            destinationLocation = selectedLocation
+            route()
+            pageStack.pop()
+        }
     }
 
+    function route() {
+        if (startLocation !== null && destinationLocation !== null) {
+            routingModel.setStartAndTarget(startLocation,
+                                           destinationLocation)
+        }
+    }
     
     function updateSuggestions() {
     
@@ -23,7 +43,7 @@ Page {
         }
         if (searchEdit.text.length < 2) {
             return
-        }        
+        }
         
         if (searchEdit.text === lastSearchedText)
         {
@@ -38,7 +58,7 @@ Page {
     LocationListModel {
         id: suggestionModel
     }
-
+    
     Timer {
         id: searchTimer
         interval: 500; running: true; repeat: true
@@ -48,7 +68,7 @@ Page {
     SearchField {
         id: searchEdit
         width: parent.width
-        placeholderText: "Enter city"
+        placeholderText: "Enter start place"
         onTextChanged: {
             wroteDuringInterval = true
         }
@@ -73,10 +93,11 @@ Page {
             }
             onClicked: {
                 suggestionsView.currentIndex = index;
-
                 var selectedLocation = suggestionModel.get(index);
-
                 selectLocation(selectedLocation);
+                searchEdit.text = ""
+                searchEdit.placeholderText = "Enter destination"
+                suggestionModel.clear()
             }                
         }
     }

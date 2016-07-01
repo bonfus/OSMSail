@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
+        <file>qml/pages/Search.qml</file>
+        <file>qml/pages/Route.qml</file>
         <file>qml/Main.qml</file>
         <file>qml/OSMSail.qml</file>
     </qresource>

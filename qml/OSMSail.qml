@@ -33,10 +33,16 @@ import Sailfish.Silica 1.0
 
 ApplicationWindow
 {
+    property alias mapPage: mapPage
+
     allowedOrientations: Orientation.All
     _defaultPageOrientations: Orientation.All
-    initialPage: Component { Main { } }
-    
+    initialPage: Main { id:mapPage }
+    cover: Component {
+        CoverBackground {
+            CoverPlaceholder { text: "OSM Sailer" }
+        }
+    }
 }
 
 
