@@ -225,6 +225,19 @@ QString GetObjectTypLabel(const osmscout::ObjectFileRef& object)
     return "";
 }
 
+void LocationListModel::clear()
+{
+  beginResetModel();
+
+  for (QList<Location*>::iterator location=locations.begin();
+       location!=locations.end();
+       ++location) {
+      delete *location;
+  }
+
+  locations.clear();
+}
+
 void LocationListModel::setPattern(const QString& pattern)
 {
   beginResetModel();

@@ -75,6 +75,7 @@ class LocationListModel : public QAbstractListModel
 
 public slots:
     void setPattern(const QString& pattern);
+    void clear();
 
 private:
     QList<Location*> locations;
