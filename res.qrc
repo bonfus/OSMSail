@@ -4,5 +4,7 @@
         <file>qml/pages/Route.qml</file>
         <file>qml/Main.qml</file>
         <file>qml/OSMSail.qml</file>
+        <file>icons/search.png</file>
+        <file>icons/route-1.png</file>
     </qresource>
 </RCC>

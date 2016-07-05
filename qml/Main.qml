@@ -169,21 +169,21 @@ Page {
     Item {
         id: toolbar
         width: parent.width
-        height: Theme.itemSizeLarge
+        height: Theme.itemSizeSmall
     
         anchors {
             bottom: parent.bottom
         }
         Rectangle {
             anchors.fill: parent
-            color: Qt.darker(Theme.highlightColor)
+            color:  Theme.rgba("black", 0.5)
         }
         IconButton {
             id: searchBtn
             anchors.left: parent.left
             anchors.leftMargin: Theme.paddingSmall
             anchors.verticalCenter: parent.verticalCenter
-            icon.source: "image://theme/icon-m-search"
+            icon.source: "qrc:icons/search.png"
     
             onClicked: {
                 onClicked: pageStack.push(Qt.resolvedUrl("pages/Search.qml"))
@@ -194,7 +194,7 @@ Page {
             anchors.left: searchBtn.right
             anchors.leftMargin: Theme.paddingSmall
             anchors.verticalCenter: parent.verticalCenter
-            icon.source: "image://theme/icon-m-search"
+            icon.source: "qrc:icons/route-1.png"
     
             onClicked: {
                 onClicked: pageStack.push(Qt.resolvedUrl("pages/Route.qml"))
