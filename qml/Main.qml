@@ -30,50 +30,6 @@ Page {
     function showLocation(location) {
         map.showLocation(location)
     }
- 
-
-    PositionSource {
-        id: positionSource
-
-        active: true
-
-        onValidChanged: {
-            console.log("Positioning is " + valid)
-            console.log("Last error " + sourceError)
-
-            for (var m in supportedPositioningMethods) {
-                console.log("Method " + m)
-            }
-        }
-
-        onPositionChanged: {
-            console.log("Position changed:")
-
-            if (position.latitudeValid) {
-                console.log("  latitude: " + position.coordinate.latitude)
-            }
-
-            if (position.longitudeValid) {
-                console.log("  longitude: " + position.coordinate.longitude)
-            }
-
-            if (position.altitudeValid) {
-                console.log("  altitude: " + position.coordinate.altitude)
-            }
-
-            if (position.speedValid) {
-                console.log("  speed: " + position.speed)
-            }
-
-            if (position.horizontalAccuracyValid) {
-                console.log("  horizontal accuracy: " + position.horizontalAccuracy)
-            }
-
-            if (position.verticalAccuracyValid) {
-                console.log("  vertical accuracy: " + position.verticalAccuracy)
-            }
-        }
-    }
 
 
     Map {
@@ -97,12 +53,14 @@ Page {
             width: map.width
             height: map.height
             pinch.minimumScale: 1.0
-            pinch.maximumScale: 5.0
+            pinch.maximumScale: 2.0
+            pinch.minimumRotation: 0.0
+            pinch.maximumRotation: 90.0            
             pinch.dragAxis: Pinch.XAndYAxis
             anchors.fill: parent
-            onPinchStarted: { map.handlePinchStart(pinch.center) }
-            onPinchUpdated: { map.handlePinchUpdate(pinch.center, pinch.scale, pinch.angle) }
-            onPinchFinished:{ map.handlePinchEnd(pinch.center, false, pinch.scale, pinch.angle) }                
+            onPinchStarted: { map.handlePinchStart() }
+            onPinchUpdated: { map.handlePinchUpdate(pinch.center, pinch.startCenter, pinch.scale, pinch.rotation) }
+            onPinchFinished:{ map.handlePinchEnd(pinch.center, pinch.startCenter, pinch.scale, pinch.rotation) }
         
         
             MouseArea {
@@ -110,9 +68,10 @@ Page {
                 acceptedButtons: Qt.LeftButton
                 width: map.width
                 height: map.height
-                onReleased: {map.qmlMouseAreaEvent(mouse.x, mouse.y, 2)}
-                onPressed: {map.qmlMouseAreaEvent(mouse.x, mouse.y, 0)}
-                onPositionChanged: {map.qmlMouseAreaEvent(mouse.x, mouse.y, 1)}
+                onReleased: {map.mouseReleaseEvent(mouse.x, mouse.y)}
+                onPressed: {map.mousePressEvent(mouse.x, mouse.y)}
+                onPositionChanged: {map.mouseMoveEvent(mouse.x, mouse.y)}
+                onDoubleClicked: {map.zoomInPos(mouse.x-(mapmouse.width/2),(mapmouse.height/2)-mouse.y,2.0)}
             }
         }
 

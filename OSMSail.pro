@@ -74,14 +74,16 @@ SOURCES = src/OSMSail.cpp \
           src/DBThread.cpp \
           src/MapWidget.cpp \
           src/SearchLocationModel.cpp \
-          src/RoutingModel.cpp
+          src/RoutingModel.cpp \
+          src/PositionSource.cpp
 
 HEADERS = src/Settings.h \
           src/Theme.h \
           src/DBThread.h \
           src/MapWidget.h \
           src/SearchLocationModel.h \
-          src/RoutingModel.h
+          src/RoutingModel.h \
+          src/PositionSource.h
 
 DISTFILES += \
     qml/custom/MapButton.qml \

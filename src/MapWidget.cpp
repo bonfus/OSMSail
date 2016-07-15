@@ -112,41 +112,80 @@ void MapWidget::redraw()
 //    return false;
 //}
 
-void MapWidget::handlePinchStart(QPointF center)
+void MapWidget::handlePinchStart()
 {
-    makePinch(center, Qt::GestureStarted);
+    DBThread *dbThread=DBThread::GetInstance();
+
+    dbThread->GetProjection(startProjection);
+    
+    startAngle = angle;
+    startMagnification = magnification.GetMagnification();
+    
+    setFocus(true);
+    mouseDragging=true;    
 }
 
-void MapWidget::handlePinchUpdate(QPointF center, qreal scale, qreal angle)
+void MapWidget::handlePinchUpdate(QPointF actualCenter, QPointF startCenter, qreal scale, qreal pangle)
 {
-    makePinch(center, Qt::GestureUpdated, scale, angle);
+    
+    makePinch(actualCenter.toPoint(),startCenter.toPoint(), scale, pangle);
+    update();
 }
 
-void MapWidget::handlePinchEnd(QPointF center, bool canceled, qreal scale, qreal angle)
+void MapWidget::handlePinchEnd(QPointF actualCenter, QPointF startCenter, qreal scale, qreal pangle)
 {
-    makePinch(center, canceled ? Qt::GestureCanceled : Qt::GestureFinished, scale, angle);
+    
+    makePinch(actualCenter.toPoint(),startCenter.toPoint(), scale, pangle);
+    
+    mouseDragging=false;
+
+    TriggerMapRendering();
+    
 }
 
-void MapWidget::makePinch(QPointF center, Qt::GestureState state, qreal scale, qreal pangle)
+void MapWidget::makePinch(QPoint actualCenter,QPoint startCenter, qreal scale, qreal pangle)
 {
     scale = sqrt(scale);
     scale = qBound(static_cast<qreal>(0.5), scale, static_cast<qreal>(2.0));
     //pinch(center, scale, state);
-    std::cout << "This is a pinch!!" << center.x() << " " << center.y() << " " << scale << " " << angle << std::endl;
-    if (state ==  Qt::GestureFinished)
-    {
-        if (scale > 1.)
-            zoomIn((double) scale);
-        else
-            zoomOut((double) (1./scale));
-        
-        // update angle
-        //angle=round(((double)pangle)/DELTA_ANGLE)*DELTA_ANGLE;
-        //
-        //if (angle<0) {
-        //    angle+=2*M_PI;
-        //}
+    std::cout << "This is a pinch!!" << actualCenter.x() << " " << actualCenter.y() << " "<< startCenter.x() << " " << startCenter.y() << " " << scale << " " << pangle << std::endl;
+    
+    osmscout::MercatorProjection projection=startProjection;
+
+    if (!projection.IsValid()) {
+        return;
     }
+
+    if (!projection.Move(startCenter.x()-actualCenter.x(),
+                         actualCenter.y()-startCenter.y())) {
+        return;
+    }
+
+    center=projection.GetCenter();
+    
+    
+    osmscout::Magnification maxMag;
+
+    maxMag.SetLevel(20);
+
+    if (startMagnification*((float)scale)>maxMag.GetMagnification()) {
+        magnification.SetMagnification(maxMag.GetMagnification());
+        std::cout << "setting max magn" << std::endl;
+    } else if (startMagnification*((float)scale)<1) {
+        magnification.SetMagnification(1);
+        std::cout << "setting min magn" << std::endl;
+    }
+    else {
+        magnification.SetMagnification(startMagnification*((float)scale));
+    }
+    
+    // still problems with PinchArea rotation
+    std::cout << "Rotation of " << fmod(pangle,180.) << std::endl;
+    //angle=round((startAngle+(pangle/180)*M_PI)/DELTA_ANGLE)*DELTA_ANGLE-DELTA_ANGLE;
+    //
+    //if (angle<0) {
+    //    angle+=2*M_PI;
+    //}
 }
 
 
@@ -190,71 +229,8 @@ void MapWidget::TriggerMapRendering()
     emit TriggerMapRenderingSignal(request);
 }
 
-void MapWidget::qmlMouseAreaEvent(int x, int y, int eventType)
-{
-    switch (eventType)
-    {
-        case 0: // pressed
-        {
-            DBThread *dbThread=DBThread::GetInstance();
-    
-            dbThread->GetProjection(startProjection);
-    
-            startX=(int)x;
-            startY=(int)y;
-    
-            setFocus(true);
-            mouseDragging=true;            
-            break;
-        }
-        case 1: // move
-        {
-            osmscout::MercatorProjection projection=startProjection;
-        
-            if (!projection.IsValid()) {
-                return;
-            }
-        
-            if (!projection.Move(startX-((int)x),
-                                ((int)y)-startY)) {
-                return;
-            }
-        
-            center=projection.GetCenter();
-            update();
-            break;
-        }
-        case 2: // released
-        {
-            if (startX!=((int)x) ||
-                startY!=((int)y) ) {
-                mouseDragging=false;
 
-                osmscout::MercatorProjection projection=startProjection;
-            
-                if (!projection.IsValid()) {
-                    return;
-                }
-            
-                if (!projection.Move(startX-((int)x),
-                                    ((int)y)-startY)) {
-                    return;
-                }
-            
-                center=projection.GetCenter();
-
-                TriggerMapRendering();
-                update();
-            }
-            break;
-        }
-    }
-}
-//void MapWidget::qmlMouseMove(QPointF center){}
-//void MapWidget::qmlMouseReleased(QPointF center){}
-
-
-void MapWidget::HandleMouseMove(QMouseEvent* event)
+void MapWidget::HandleMouseMove(int event_x, int event_y)
 {
     osmscout::MercatorProjection projection=startProjection;
 
@@ -262,8 +238,8 @@ void MapWidget::HandleMouseMove(QMouseEvent* event)
         return;
     }
 
-    if (!projection.Move(startX-event->x(),
-                         event->y()-startY)) {
+    if (!projection.Move(startX-event_x,
+                         event_y-startY)) {
         return;
     }
 
@@ -285,9 +261,27 @@ void MapWidget::mousePressEvent(QMouseEvent* event)
     }
 }
 
+void MapWidget::mousePressEvent(int event_x, int event_y)
+{
+    DBThread *dbThread=DBThread::GetInstance();
+
+    dbThread->GetProjection(startProjection);
+
+    startX=event_x;
+    startY=event_y;
+
+    setFocus(true);
+    mouseDragging=true;
+}
+
 void MapWidget::mouseMoveEvent(QMouseEvent* event)
 {
-    HandleMouseMove(event);
+    HandleMouseMove(event->x(),event->y());
+    update();
+}
+void MapWidget::mouseMoveEvent(int event_x, int event_y)
+{
+    HandleMouseMove(event_x,event_y);
     update();
 }
 
@@ -297,7 +291,17 @@ void MapWidget::mouseReleaseEvent(QMouseEvent* event)
         (startX!=event->x() ||
          startY!=event->y())) {
         mouseDragging=false;
-        HandleMouseMove(event);
+        HandleMouseMove(event->x(),event->y());
+        TriggerMapRendering();
+        update();
+    }
+}
+void MapWidget::mouseReleaseEvent(int event_x, int event_y)
+{
+    if (startX!=event_x ||
+         startY!=event_y) {
+        mouseDragging=false;
+        HandleMouseMove(event_x,event_y);
         TriggerMapRendering();
         update();
     }
@@ -343,6 +347,36 @@ void MapWidget::paint(QPainter *painter)
     }
 
     hasBeenPainted=true;
+}
+
+void MapWidget::zoomInPos(int dx, int dy, double zoomFactor)
+{
+    
+    DBThread *dbThread=DBThread::GetInstance();
+
+    dbThread->GetProjection(startProjection);    
+    
+    qDebug() << "dx is " << dx << " dy is " << dy;
+    
+    if (!startProjection.Move(dx,
+                         dy)) {
+        return;
+    }    
+    
+    center=startProjection.GetCenter();
+    
+    osmscout::Magnification maxMag;
+
+    maxMag.SetLevel(20);
+
+    if (magnification.GetMagnification()*zoomFactor>maxMag.GetMagnification()) {
+        magnification.SetMagnification(maxMag.GetMagnification());
+    }
+    else {
+        magnification.SetMagnification(magnification.GetMagnification()*zoomFactor);
+    }
+
+    TriggerMapRendering();
 }
 
 void MapWidget::zoomIn(double zoomFactor)

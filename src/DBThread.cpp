@@ -31,6 +31,9 @@
 
 #include <osmscout/system/Math.h>
 
+// TODO Add this to settings
+#define MIN_POS_INDICATOR_SIZE 10.0
+
 // Timeout for the first rendering after rerendering was triggered (render what ever data is available)
 static int INITIAL_DATA_RENDERING_TIMEOUT = 10;
 
@@ -215,7 +218,6 @@ void DBThread::TileStateCallback(const osmscout::TileRef& changedTile)
 
 void DBThread::Initialize()
 {
-    std::cout << "INITIALIZING!!" << std::endl;
 #if defined(__ANDROID__) || defined(_SAILFISH_BUILD)
     QStringList docPaths=QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
 
@@ -290,9 +292,7 @@ void DBThread::Initialize()
   }
 
   lastRendering=QTime::currentTime();
-  std::cout << "DONE INITIALIZING!!" << std::endl;
   emit InitialisationFinished(response);
-  std::cout << "DONE EMITTING!!" << std::endl;
 }
 
 void DBThread::Finalize()
@@ -398,7 +398,6 @@ void DBThread::ReloadStyle()
  */
 void DBThread::TriggerMapRendering(const RenderMapRequest& request)
 {
-  std::cout << ">>> User triggered rendering" << std::endl;
   dataLoadingBreaker->Reset();
 
   {
@@ -411,13 +410,13 @@ void DBThread::TriggerMapRendering(const RenderMapRequest& request)
     currentAngle=request.angle;
     currentMagnification=request.magnification;
     
-    std::cout << ">>> currentWidth " << currentWidth << std::endl;
-    std::cout << ">>> currentHeight " << currentHeight << std::endl;
-    std::cout << ">>> currentLon " << currentLon << std::endl;
-    std::cout << ">>> currentLat " << currentLat << std::endl;
-    std::cout << ">>> currentAngle " << currentAngle << std::endl;
-    std::cout << ">>> currentMagnification " << currentMagnification.GetLevel() << std::endl;
-    std::cout << ">>> current dpi " << dpi << std::endl;
+    //std::cout << ">>> currentWidth " << currentWidth << std::endl;
+    //std::cout << ">>> currentHeight " << currentHeight << std::endl;
+    //std::cout << ">>> currentLon " << currentLon << std::endl;
+    //std::cout << ">>> currentLat " << currentLat << std::endl;
+    //std::cout << ">>> currentAngle " << currentAngle << std::endl;
+    //std::cout << ">>> currentMagnification " << currentMagnification.GetLevel() << std::endl;
+    //std::cout << ">>> current dpi " << dpi << std::endl;
     
     //currentLon=12.3305;
     //currentLat=38.6349;
@@ -448,15 +447,12 @@ void DBThread::TriggerMapRendering(const RenderMapRequest& request)
                      currentHeight);
 
       std::list<osmscout::TileRef> tiles;
-      std::cout << "mapService->LookupTiles" << std::endl;
       mapService->LookupTiles(projection,tiles);
-      std::cout << styleConfig->HasFlag("daylight") << std::endl;
-      std::cout << "Done" << std::endl;
+      // std::cout << styleConfig->HasFlag("daylight") << std::endl;
       if (!mapService->LoadMissingTileDataAsync(searchParameter,*styleConfig,tiles)) {
         qDebug() << "*** Loading of data has error or was interrupted";
         return;
       }
-      std::cout << "Emitting" << std::endl;
       emit TriggerInitialRendering();
     }
     else {
@@ -467,6 +463,22 @@ void DBThread::TriggerMapRendering(const RenderMapRequest& request)
       RenderMessage(p,request.width,request.height,"Database not open");
     }
   }
+}
+
+/**
+ * Draw position on map
+ */
+void DBThread::TriggerPositionRendering(const QGeoPositionInfo& info)
+{
+
+  if (info.isValid() == false)
+    return;
+
+  currentPositionInfo = info;
+
+  lastRendering=QTime::currentTime();
+
+  emit HandleMapRenderingResult();
 }
 
 /**
@@ -625,12 +637,13 @@ bool DBThread::RenderMap(QPainter& painter,
     scaleSize=scaleSize/10;
   }
 
-  //std::cout << "VisualScale: value: " << scaleValue << " pixel: " << scaleSize << std::endl;
+//  std::cout << "VisualScale: value: " << scaleValue << " pixel: " << scaleSize << std::endl;
 
   double dx=0;
   double dy=0;
-  if (request.lon!=finishedLon || request.lat!=finishedLat) {
-    double rx,ry,fx,fy;
+  double rx=0,ry=0;
+  if (request.lon!=finishedLon || request.lat!=finishedLat || finishedMagnification!=request.magnification) {
+    double fx,fy;
 
     projection.GeoToPixel(request.lon,
                           request.lat,
@@ -669,8 +682,84 @@ bool DBThread::RenderMap(QPainter& painter,
                                       backgroundColor.GetA()));
   }
 
-  painter.drawImage(dx,dy,*finishedImage);
+  if (finishedMagnification>request.magnification)
+  {
+    float scaleFactor = request.magnification.GetMagnification()/finishedMagnification.GetMagnification();
+    int imageWidth = finishedImage->width();
+    int imageHeight = finishedImage->height();    
 
+    //setDevicePixelRatio
+    //painter.drawImage(dx,dy, finishedImage->copy(rx-imageWidth/(2*scaleFactor),ry-imageHeight/(2*scaleFactor), imageWidth/scaleFactor, imageHeight/scaleFactor));
+//    qDebug() << "Scale factor is " << scaleFactor;
+//    qDebug() << "dx and dy " << dx << " " << dy;
+//    qDebug() << "the spacing is  " << 0.5*(imageWidth*(1-scaleFactor)) << " " << 0.5*(imageHeight*(1-scaleFactor));
+    finishedImage->setDevicePixelRatio(1./scaleFactor);
+    //painter.drawImage(2.*dx/(scaleFactor),2.*dy/(scaleFactor),*finishedImage);
+    painter.drawImage(dx+0.5*(imageWidth*(1-scaleFactor)),dy+0.5*(imageHeight*(1-scaleFactor)),*finishedImage);
+  } else if (finishedMagnification<request.magnification) {
+    float scaleFactor = request.magnification.GetMagnification()/finishedMagnification.GetMagnification();
+    int imageWidth = finishedImage->width();
+    int imageHeight = finishedImage->height();
+    
+    
+    finishedImage->setDevicePixelRatio(1.);
+    
+    // crop image to be scaled
+    QImage zim = finishedImage->copy((rx+dx)-imageWidth/(2*scaleFactor),(ry+dy)-imageHeight/(2*scaleFactor), imageWidth/scaleFactor, imageHeight/scaleFactor);
+    
+    painter.drawImage(0,0,zim.scaled(imageWidth, imageHeight));
+  
+  } else {
+    finishedImage->setDevicePixelRatio(1.);
+    painter.drawImage(dx,dy,*finishedImage);
+    
+    // draw scale
+    
+    painter.drawLine(20, 45, 20+scaleSize, 45);
+    QString label;
+    if (scaleValue > 1000) {
+        label = QString::number(scaleValue/1000,'f', 0) + QString(" km");
+    } else { 
+        label = QString::number(scaleValue,'f', 0) + QString(" m");
+    }
+    painter.drawText(20, 25, label);
+    
+    // end draw scale
+    
+  }
+  
+  
+  
+  // draw current position
+  if (currentPositionInfo.isValid())
+  {
+    double px,py;
+
+    projection.GeoToPixel(currentPositionInfo.coordinate().longitude() ,
+                          currentPositionInfo.coordinate().latitude() ,
+                          px,
+                          py);
+    double rad = MIN_POS_INDICATOR_SIZE;
+    if (currentPositionInfo.hasAttribute(QGeoPositionInfo::HorizontalAccuracy))
+    {
+        rad = projection.GetMeterInPixel()*(currentPositionInfo.attribute(QGeoPositionInfo::HorizontalAccuracy));
+        if (rad < MIN_POS_INDICATOR_SIZE)
+            rad = MIN_POS_INDICATOR_SIZE;
+    }
+    
+    
+    if (((px+dx) > 0 && (px+dx) < finishedImage->width()) &&
+        ((py+dy) > 0 && (py+dy) < finishedImage->height()))
+    {
+        QBrush brush = painter.brush();
+        brush.setStyle(Qt::SolidPattern);
+        // TODO Add this to settings
+        brush.setColor(QColor(10, 10, 200, 100));
+        painter.setBrush(brush);
+        painter.drawEllipse((int)(px+dx), (int)(py+dy), (int) rad, (int) rad);
+    }
+  }
+  
   bool needsNoRepaint=finishedImage->width()==(int) request.width &&
                       finishedImage->height()==(int) request.height &&
                       finishedLon==request.lon &&

@@ -41,6 +41,9 @@
 // Application settings
 #include "Settings.h"
 
+// Position source
+#include "PositionSource.h"
+
 // Application theming
 #include "Theme.h"
 
@@ -99,6 +102,7 @@ int main(int argc, char* argv[])
   QScopedPointer<QGuiApplication> app(argc,argv);
 #endif
   SettingsRef     settings;
+  PositionSourceRef     position;
   int             result;
 
   app->setOrganizationName("libosmscout");
@@ -119,7 +123,7 @@ int main(int argc, char* argv[])
 
   osmscout::log.Debug(true);
 
-  settings=std::make_shared<Settings>();
+
 
   QThread thread;
 
@@ -127,6 +131,9 @@ int main(int argc, char* argv[])
     std::cerr << "Cannot initialize DBThread" << std::endl;
     return 1;
   }
+
+  settings=std::make_shared<Settings>();
+  position=std::make_shared<PositionSource>();
 
   DBThread* dbThread=DBThread::GetInstance();
 

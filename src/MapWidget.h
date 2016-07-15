@@ -46,6 +46,8 @@ private:
   // Drag and drop
   int                          startX;
   int                          startY;
+  double                       startAngle;
+  double                       startMagnification;
   osmscout::MercatorProjection startProjection;
 
   // Controlling rerendering...
@@ -64,6 +66,7 @@ public slots:
   void redraw();
   void zoomIn(double zoomFactor);
   void zoomOut(double zoomFactor);
+  void zoomInPos(int dx, int dy, double zoomFactor );
   void left();
   void right();
   void up();
@@ -78,21 +81,21 @@ public slots:
   void showLocation(Location* location);
 
 // pinch
-  void handlePinchStart(QPointF center);
-  void handlePinchUpdate(QPointF center, qreal scale, qreal angle);
-  void handlePinchEnd(QPointF center, bool canceled, qreal scale, qreal angle);
+  void handlePinchStart();
+  void handlePinchUpdate(QPointF actualCenter, QPointF startCenter, qreal scale, qreal pangle);
+  void handlePinchEnd(QPointF actualCenter, QPointF startCenter, qreal scale, qreal pangle);
 
 // mousearea
-  void qmlMouseAreaEvent(int x, int y, int eventType);
+//  void qmlMouseAreaEvent(int x, int y, int eventType);
 //  void qmlMouseMove(QPointF center);
 //  void qmlMouseReleased(QPointF center);
   
 private:
   void TriggerMapRendering();
 
-  void HandleMouseMove(QMouseEvent* event);
+  void HandleMouseMove(int event_x, int event_y);
 //pinch  
-  void makePinch(QPointF center, Qt::GestureState state, qreal scale = 1, qreal pangle = 0);
+  void makePinch(QPoint actualCenter, QPoint startCenter, qreal scale, qreal pangle);
 
 public:
   MapWidget(QQuickItem* parent = 0);
@@ -109,8 +112,11 @@ public:
   }
 
   void mousePressEvent(QMouseEvent* event);
+  Q_INVOKABLE void mousePressEvent(int event_x, int event_y);
   void mouseMoveEvent(QMouseEvent* event);
+  Q_INVOKABLE void mouseMoveEvent(int event_x, int event_y);
   void mouseReleaseEvent(QMouseEvent* event);
+  Q_INVOKABLE void mouseReleaseEvent(int event_x, int event_y);
   void wheelEvent(QWheelEvent* event);
 
   void paint(QPainter *painter);

@@ -26,7 +26,9 @@
 #include <QMutex>
 #include <QTime>
 #include <QTimer>
-
+#include <QGeoPositionInfo> 
+#include <QGeoCoordinate> 
+ 
 #include <osmscout/Database.h>
 #include <osmscout/LocationService.h>
 #include <osmscout/MapService.h>
@@ -48,6 +50,7 @@ struct RenderMapRequest
   size_t                  width;
   size_t                  height;
 };
+
 
 Q_DECLARE_METATYPE(RenderMapRequest)
 
@@ -91,6 +94,7 @@ public slots:
   void HandleTileStatusChanged(const osmscout::TileRef& changedTile);
   void DrawMap();
   void TriggerMapRendering(const RenderMapRequest& request);
+  void TriggerPositionRendering(const QGeoPositionInfo& info);
   void Initialize();
   void Finalize();
 
@@ -132,6 +136,8 @@ private:
   double                        finishedLon;
   double                        finishedAngle;
   osmscout::Magnification       finishedMagnification;
+
+  QGeoPositionInfo              currentPositionInfo;
 
   osmscout::BreakerRef          dataLoadingBreaker;
 
