@@ -236,6 +236,8 @@ void LocationListModel::clear()
   }
 
   locations.clear();
+  
+  endResetModel();
 }
 
 void LocationListModel::setPattern(const QString& pattern)
@@ -267,12 +269,64 @@ void LocationListModel::setPattern(const QString& pattern)
       locations.append(location);
   }
 
-  std::cout << "Searching for '" << osmPattern << "'" << std::endl;
 
   DBThread::GetInstance()->SearchForLocations(osmPattern,
                                               50,
                                               searchResult);
 
+  insertResults(searchResult);
+
+  endResetModel();
+}
+
+void LocationListModel::setPattern(const QString& adminRegion,
+                    const QString& address,
+                    const QString& location)
+{
+  beginResetModel();
+
+  for (QList<Location*>::iterator location=locations.begin();
+       location!=locations.end();
+       ++location) {
+      delete *location;
+  }
+
+  locations.clear();
+
+  osmscout::LocationSearchResult searchResult;
+
+  std::string osmRegion=adminRegion.toUtf8().constData();
+  std::string osmAddress=address.toUtf8().constData();
+  std::string osmLocation=location.toUtf8().constData();
+
+  osmscout::GeoCoord coord;
+
+  if (osmscout::GeoCoord::Parse(osmRegion,
+                                coord)) {
+      QString name=QString::fromLocal8Bit(coord.GetDisplayText().c_str());
+      QString label=name;
+
+      Location *location=new Location(name,
+                                      label,
+                                      coord);
+      locations.append(location);
+  }
+
+  //std::cout << "Searching for '" << osmRegion << " " << osmAddress <<" " <<  osmLocation << "'" << std::endl;
+
+  DBThread::GetInstance()->SearchForLocations(osmRegion,
+                                              osmAddress,
+                                              osmLocation,
+                                              50,
+                                              searchResult);
+
+  insertResults(searchResult);
+
+  endResetModel();
+}
+
+void LocationListModel::insertResults(osmscout::LocationSearchResult searchResult)
+{
   std::map<osmscout::FileOffset,osmscout::AdminRegionRef> adminRegionMap;
 
   for (std::list<osmscout::LocationSearchResult::Entry>::const_iterator entry=searchResult.results.begin();
@@ -421,8 +475,6 @@ void LocationListModel::setPattern(const QString& pattern)
         locations.append(location);
     }
   }
-
-  endResetModel();
 }
 
 int LocationListModel::rowCount(const QModelIndex& ) const

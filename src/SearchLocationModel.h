@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QAbstractListModel>
 
+#include <osmscout/LocationService.h>
 #include <osmscout/GeoCoord.h>
 #include <osmscout/Location.h>
 
@@ -75,9 +76,14 @@ class LocationListModel : public QAbstractListModel
 
 public slots:
     void setPattern(const QString& pattern);
+    void setPattern(const QString& adminRegion,
+                    const QString& address,
+                    const QString& location);
     void clear();
 
 private:
+    void insertResults(osmscout::LocationSearchResult searchResult);
+
     QList<Location*> locations;
 
 public:

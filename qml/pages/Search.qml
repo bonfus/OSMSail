@@ -21,18 +21,18 @@ Page {
             wroteDuringInterval=false
             return
         }
-        if (searchEdit.text.length < 2) {
+        if (searchCity.text.length < 2) {
             return
         }        
         
-        if (searchEdit.text === lastSearchedText)
+        if ((searchCity.text+searchAddress.text) === lastSearchedText)
         {
             return
         }
         
         // we have valid input
-        suggestionModel.setPattern(searchEdit.text)
-        lastSearchedText = searchEdit.text
+        suggestionModel.setPattern(searchCity.text, searchAddress.text,searchAddress.text)
+        lastSearchedText = searchCity.text+searchAddress.text
     }
     
     LocationListModel {
@@ -46,9 +46,20 @@ Page {
     }
     
     SearchField {
-        id: searchEdit
+        id: searchCity
         width: parent.width
+        height: 60
         placeholderText: "Enter city"
+        onTextChanged: {
+            wroteDuringInterval = true
+        }
+    }
+    SearchField {
+        id: searchAddress
+        width: parent.width
+        height: 60
+        anchors { top: searchCity.bottom; left: parent.left; right: parent.right; topMargin: 0; }        
+        placeholderText: "Enter address"
         onTextChanged: {
             wroteDuringInterval = true
         }
@@ -58,8 +69,8 @@ Page {
 
         id: suggestionsView
 
-        anchors { top: searchEdit.bottom; left: parent.left; right: parent.right;
-                    bottom: parent.bottom; topMargin: Theme.paddingMedium; }      
+        anchors { top: searchAddress.bottom; left: parent.left; right: parent.right;
+                    bottom: parent.bottom; topMargin: 0; }      
         
         model: suggestionModel
         delegate: ListItem {

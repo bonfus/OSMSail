@@ -174,6 +174,11 @@ public:
   bool SearchForLocations(const std::string& searchPattern,
                           size_t limit,
                           osmscout::LocationSearchResult& result) const;
+  bool SearchForLocations(const std::string& adminRegionPattern,
+                          const std::string& addressPattern,
+                          const std::string& locationPattern,
+                          size_t limit,
+                          osmscout::LocationSearchResult& result) const;
 
   bool CalculateRoute(osmscout::Vehicle vehicle,
                       const osmscout::RoutingProfile& routingProfile,

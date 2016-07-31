@@ -822,6 +822,40 @@ bool DBThread::SearchForLocations(const std::string& searchPattern,
                                              result);
 }
 
+bool DBThread::SearchForLocations(const std::string& adminRegionPattern,
+                                  const std::string& addressPattern,
+                                  const std::string& locationPattern,
+                                  size_t limit,
+                                  osmscout::LocationSearchResult& result) const
+{
+  QMutexLocker locker(&mutex);
+
+
+  osmscout::LocationSearch search;
+
+  search.limit=limit;
+
+  osmscout::LocationSearch::Entry searchEntry;
+
+  if(!adminRegionPattern.empty())
+    searchEntry.adminRegionPattern=adminRegionPattern; //name pattern, the admin region must match, empty if no filtering by admin region requested
+  if(!addressPattern.empty())
+    searchEntry.addressPattern=locationPattern; //  	name pattern, the address must match, empty if no filtering by address requested
+  if(!locationPattern.empty())
+    searchEntry.locationPattern=addressPattern; // name pattern, the location must match, empty if no filtering by location requested More...
+  
+  //std::cout << "AAA " << searchEntry.adminRegionPattern << " " << searchEntry.addressPattern << " " << searchEntry.locationPattern << std::endl;
+  
+  osmscout::LocationIndexRef locationIndex=database->GetLocationIndex();  
+  
+  if (!locationIndex->IsRegionIgnoreToken(searchEntry.adminRegionPattern)) {
+      search.searches.push_back(searchEntry);
+  }
+
+  return locationService->SearchForLocations(search,
+                                             result);
+}
+
 bool DBThread::CalculateRoute(osmscout::Vehicle vehicle,
                               const osmscout::RoutingProfile& routingProfile,
                               const osmscout::ObjectFileRef& startObject,
